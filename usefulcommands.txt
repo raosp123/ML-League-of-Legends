@@ -11,10 +11,12 @@ sometimes you may need to use ''https://europe.api.riotgames.com'
 
 ---API CALLS---
 
-
 Get the puuid of a user:
     general - https://<region>.api.riotgames.com/lol/summoner/v4/summoners/by-name/<name>?api_key=
     example - https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/VexedOwl?api_key=[]
+
+    Example puuid:
+    S01KLVfg1APQYb5xtEoU7QcyKmlpxluPNatYIQE4wmWsallXAw0WBldrlXYMYwrug5PypPYmGtUBjA
 
 get the match ids of a user by puuid:
     general - https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?api_key=
@@ -32,3 +34,41 @@ get the match ids of a user by puuid:
 get the match data using match id:
     general - https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key=
     example - https://europe.api.riotgames.com/lol/match/v5/matches/EUW1_6140549247?api_key=RGAPI-ae3f51f8-1636-4c4a-b00d-33d4e93a5444
+
+
+---DATA---
+The following is data we will use/consider for the evaluation
+
+Game data:
+    Our goal is to determine what could be useful in section 3.
+
+
+    1. MetaData
+
+        -Participants: list of puuids for all Participants
+
+
+    2. Match info
+
+        - *ENSURE "gamemode": CLASSIC for matches*
+        - "gameDuration": X seconds
+        - participants: all performance data for all participants, in the order of their ids from the MetaData above.
+
+    3. Participants data
+        participant data is split into general stuff, and then there is a challenges section
+
+        Challenges:
+
+        General Data:
+            -"teamPosition" === "TOP","JUNGLE","MIDDLE","BOTTOM","UTILITY"
+
+
+
+
+
+
+
+
+   
+    
+
