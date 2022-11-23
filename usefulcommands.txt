@@ -65,7 +65,26 @@ Game data:
 
 
 
+---TESTING CODE---
 
+   ###CODE TO TEST DEPTH 0 DATA ACCUMULATION
+# with open('test.json', 'r') as f:
+#   match_data = json.load(f)
+# other_participant_IDs = []
+# player_data_Accumulator = []
+# for match in match_data:
+#         #ensure we are looking at correct gamemode
+#         if(match["info"]["gameMode"]=="CLASSIC"):
+#             #Particpants to recursively examine later, remove the current player to prevent duplicates
+#             other_participant_IDs+= (match["metadata"]["participants"])
+#             other_participant_IDs.remove(player_ID)
+#             #Call extractPlayerData on each of the 10 participants in the current match
+#             for player_data in match["info"]["participants"]:
+#                 extractPlayerData(player_data, player_data_Accumulator)
+# print(len(player_data_Accumulator))
+# #store for testing
+# with open("./finalOutputDepth1.json", "w") as fp:
+#         json.dump( player_data_Accumulator, fp, indent=4)
 
 
 
