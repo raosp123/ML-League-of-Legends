@@ -1,5 +1,6 @@
 import pandas as pd 
 import numpy as np 
+import json
 from sklearn.datasets import make_classification
 from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plot
@@ -9,18 +10,19 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import roc_curve
+from sklearn.preprocessing import StandardScaler
 
 ##parent function that runs our model fully
 
 
 def logisticRegFullFeatures(data, c):
 
-    y = data.win
+    y = data.win.astype('int')
     X = data.drop(["teamPosition", "win"], axis=1)
 
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2,stratify=y)
 
-    model = LogisticRegression(penalty='l2',C=c,solver='lbfgs')
+    model = LogisticRegression(penalty='none')
     # fit the model
     model.fit(X, y)
     
@@ -46,6 +48,9 @@ def featureImport(model, X):
     feas['features'] = X.keys()
     feas['importance'] = importance
     feas = feas.sort_values(by='importance')
+
+    for i,v in enumerate(importance):
+        print('Feature: %s, Score: %.5f' % (feas['features'][i],v))
 
     feas1 = feas[0:95]
     feas2 = feas[95:191]
@@ -79,8 +84,6 @@ def dummyComparison(Xtrain, Xtest, ytrain, ytest, comparison_model):
     print(confusion_matrix(ytest, ydummy))
     print(classification_report(ytest, ydummy))
 
-    fpr, tpr, _ = roc_curve(ytest,comparison_model.decision_function(Xtest))
-    plot.plot(fpr,tpr)
     fpr1, tpr1, _ = roc_curve(ytest,y_pred)
     plot.plot(fpr1,tpr1)
     fpr2, tpr2, _ = roc_curve(ytest,ydummy)
@@ -90,15 +93,11 @@ def dummyComparison(Xtrain, Xtest, ytrain, ytest, comparison_model):
     plot.ylabel('True positive rate')
     plot.legend(["logistic", "dummy"]) 
     plot.show()
-
-    
-
-
+ 
 def logisticCrossVal(data):
 
     y = data.win
-    X = data[["goldSpent", "gameLength","timePlayed","bountyGold","goldEarned","champExperience",
-              "summonerLevel","damageDealtToTurrets","damageDealtToBuildings","damageDealtToObjectives"]]
+    X = data.drop(["teamPosition", "win"], axis=1)
 
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2,stratify=y)
 
@@ -116,7 +115,24 @@ def logisticCrossVal(data):
     plot.xlabel('Ci'); plot.ylabel('F1 Score')
     plot.show()
 
-df = pd.read_csv('ml_data.csv')
+df = pd.read_csv('league_dataset_60k.csv')
+column_keys = df.keys()
+scaler = StandardScaler()
+
+print(df.shape)
+
+#pop the string label and win output before normalisation
+teampos = df.pop("teamPosition")
+win = df.pop("win")
+
+df = scaler.fit_transform(df)
+
+
+print(df.shape)
+df = np.column_stack((teampos, df))
+df = pd.DataFrame(np.column_stack((df, win)), columns=column_keys)
+print(df)
+
 grouped = df.groupby(df.teamPosition)
 data_top = grouped.get_group("TOP")
 data_jug= grouped.get_group("JUNGLE")
@@ -124,15 +140,12 @@ data_mid = grouped.get_group("MIDDLE")
 data_bot = grouped.get_group("BOTTOM")
 data_sup = grouped.get_group("UTILITY")
 
-print(data_top["win"].value_counts())
 
-#the data you input here will be used for the model
-model, Xtrain, Xtest, ytrain, ytest = logisticRegFullFeatures(data_top, 1)
+model, Xtrain, Xtest, ytrain, ytest = logisticRegFullFeatures(df, 1)
+# #call the other functions you want to use here
 
-#call the other functions you want to use here
-
-#featureImport(model, Xtrain)
-logisticCrossVal(data_top)
+featureImport(model, Xtrain)
+#logisticCrossVal(data_top)
 dummyComparison(Xtrain, Xtest, ytrain, ytest, model)
 
 
