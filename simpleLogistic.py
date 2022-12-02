@@ -31,8 +31,22 @@ def logisticRegFullFeatures(data, c):
 
 def logisticRegLimitedFeatures(data, c):
     y=data.win.astype('int')
-    X = data[["goldSpent", "gameLength","timePlayed","bountyGold","goldEarned","champExperience",
-              "summonerLevel","damageDealtToTurrets","damageDealtToBuildings","damageDealtToObjectives"]]
+    X = data[['damagePerMinute',
+            'bountyLevel', 
+            'goldPerMinute',
+            'champExperience',
+            'visionScorePerMinute',
+            'turretTakedowns',
+            'kda',
+            'hadOpenNexus',
+            'turretsLost',
+            'visionScore',
+            'teamDamagePercentage',
+            'totalDamageDealtToChampions',
+            'killParticipation',
+            'goldSpent',
+            'physicalDamageDealtToChampions',
+            'jungleCsBefore10Minutes',]]
 
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2,stratify=y)
 
@@ -41,6 +55,40 @@ def logisticRegLimitedFeatures(data, c):
     model.fit(X, y)
     
     return model, Xtrain, Xtest, ytrain, ytest
+
+def trainVsTestPredict(data):
+    plot.rcParams['figure.constrained_layout.use'] = True
+
+    train_points = []
+    test_points = []
+
+    for i in range(10):
+
+        model, Xtrain, Xtest, ytrain, ytest = logisticRegLimitedFeatures(data, 1)
+        y_pred = model.predict(Xtest)
+        print(confusion_matrix(ytest, y_pred))
+        c_report_test = classification_report(ytest, y_pred, output_dict=True)["accuracy"]
+
+        test_points.append(c_report_test)
+
+        y_pred2 = model.predict(Xtrain)
+        print(confusion_matrix(ytrain, y_pred2))
+        c_report_train = classification_report(ytrain, y_pred2, output_dict=True)["accuracy"]
+
+        train_points.append(c_report_train)
+        print(f'test accuracy is: {c_report_test}, train accurracy is: {c_report_train}')
+
+    base = np.arange(1, len(train_points)+1,1)
+
+    plot.plot(base, train_points)
+    plot.plot(base, test_points)
+
+    plot.title('test vs train accuracy')
+    plot.ylabel('accuracy')
+    plot.xlabel('crossval iteration')
+    plot.legend(['train', 'test'], loc='upper left')
+    plot.show()
+
 
 def featureImport(model, X):
 
@@ -142,14 +190,16 @@ data_mid = grouped.get_group("MIDDLE")
 data_bot = grouped.get_group("BOTTOM")
 data_sup = grouped.get_group("UTILITY")
 
-
-model, Xtrain, Xtest, ytrain, ytest = logisticRegLimitedFeatures(data_top, 1)
-
-#print(f"size of train data X:{Xtrain.shape} Y:{ytrain.shape}, size of test data X:{Xtest.shape} Y:{ytest.shape}")
-# #call the other functions you want to use here
-
-featureImport(model, Xtrain)
+#trainVsTestPredict(df)
 #logisticCrossVal(df)
-dummyComparison(Xtrain, Xtest, ytrain, ytest, model)
+
+
+#model, Xtrain, Xtest, ytrain, ytest = logisticRegLimitedFeatures(data_top, 1)
+
+#other functions to use, uncomment where needed
+
+#featureImport(model, Xtrain)
+
+#dummyComparison(Xtrain, Xtest, ytrain, ytest, model)
 
 
