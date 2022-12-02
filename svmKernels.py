@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np 
 import json
 from sklearn.datasets import make_classification
-from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 import matplotlib.pyplot as plot
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
@@ -11,7 +11,6 @@ from sklearn.metrics import classification_report
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import roc_curve
 from sklearn.preprocessing import StandardScaler
-from operator import itemgetter
 
 top_keys = ["turretsLost","teamDamagePercentage","killParticipation","twentyMinionsIn3SecondsCount","visionScore",
               "laneMinionsFirst10Minutes","neutralMinionsKilled","totalDamageDealtToChampions","bountyLevel","goldPerMinute",
@@ -31,32 +30,43 @@ bot_keys =["goldSpent", "bountyGold","totalDamageTaken","gameLength","timePlayed
 
 sup_keys =["turretsLost","teamDamagePercentage","killParticipation","goldSpent","visionScore",
               "enemyJungleMonsterKills","skillshotsHit","twentyMinionsIn3SecondsCount","bountyLevel","goldPerMinute",
-             "damagePerMinute","turretTakedowns","damageTakenOnTeamPercentage","kda","champExperience","champLevel" ]
+             "damagePerMinute","turretTakedowns","damageTakenOnTeamPercentage","kda","champExperience","champLevel"]
 
-def logisticRegFullFeatures(data, c):
+def svcKernelLimitedFeatures(data, c, gamma, keys):
 
     y = data.win.astype('int')
-    X = data.drop(["teamPosition", "win"], axis=1)
-
-    Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2,stratify=y)
-
-    model = LogisticRegression(C=c,penalty='l2')
-    # fit the model
-    model.fit(Xtrain, ytrain)
-    
-    return model, Xtrain, Xtest, ytrain, ytest
-
-def logisticRegLimitedFeatures(data, c, keys):
-    y=data.win.astype('int')
     X = data[keys]
 
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2,stratify=y)
 
-    model = LogisticRegression(penalty='l2',C=c,solver='lbfgs')
+    model = SVC(C=c,kernel='rbf',gamma=gamma)
     # fit the model
     model.fit(Xtrain, ytrain)
     
     return model, Xtrain, Xtest, ytrain, ytest
+
+
+def dummyComparison(Xtrain, Xtest, ytrain, ytest, comparison_model):
+    #compared model
+    y_pred = comparison_model.predict(Xtest)
+    print(confusion_matrix(ytest, y_pred))
+    print(classification_report(ytest, y_pred))
+
+    #dummy classifier
+    dummy = DummyClassifier(strategy='most_frequent').fit(Xtrain, ytrain)
+    ydummy = dummy.predict(Xtest)
+    print(confusion_matrix(ytest, ydummy))
+    print(classification_report(ytest, ydummy))
+
+    fpr1, tpr1, _ = roc_curve(ytest,y_pred)
+    plot.plot(fpr1,tpr1)
+    fpr2, tpr2, _ = roc_curve(ytest,ydummy)
+    plot.title("ROC curve",fontsize=18,pad=20)
+    plot.plot(fpr2,tpr2,color='green',linestyle='--')
+    plot.xlabel('False positive rate')
+    plot.ylabel('True positive rate')
+    plot.legend(["Kernalised SVM", "dummy"]) 
+    plot.show()
 
 def trainVsTestPredict(data):
     plot.rcParams['figure.constrained_layout.use'] = True
@@ -66,7 +76,7 @@ def trainVsTestPredict(data):
 
     for i in range(10):
 
-        model, Xtrain, Xtest, ytrain, ytest = logisticRegLimitedFeatures(data, 1, top_keys)
+        model, Xtrain, Xtest, ytrain, ytest = svcKernelLimitedFeatures(data, 5, 1, top_keys)
         y_pred = model.predict(Xtest)
         print(confusion_matrix(ytest, y_pred))
         c_report_test = classification_report(ytest, y_pred, output_dict=True)["accuracy"]
@@ -91,96 +101,72 @@ def trainVsTestPredict(data):
     plot.legend(['train', 'test'], loc='upper left')
     plot.show()
 
-def featureImport(model, X):
 
-    plot.rcParams['figure.constrained_layout.use'] = True
-    importance = model.coef_[0]
-    feas = pd.DataFrame()
-    feas['features'] = X.keys()
-    feas['importance'] = importance
-    feas = feas.sort_values(by='importance')
-
-    features = []
-
-    for i,v in enumerate(importance):
-        features.append((feas['features'][i],v))
-
-    features.sort(key=itemgetter(1))
-
-    print(features)
-
-    #feas1 = feas[0:95]
-    #feas2 = feas[95:191]
-    feas1 = feas[0:15]
-    feas2 = feas[45:95]
-    feas3 = feas[95:140]
-    feas4 = feas[170:191]
-
-    plot.rc('font', size=10);
-    fig, axes = plot.subplots(figsize=(11,17))
-    axes.barh(np.arange(feas1.shape[0]), feas1.importance.values, alpha=0.8,color='orange')
-    axes.set_title("feature importance")
-    axes.set_yticks(np.arange(feas1.shape[0]))
-    axes.set_yticklabels(feas1.features.values, rotation='horizontal')
-
-    plot.show()
-
-    fig, axes = plot.subplots(figsize=(11,17))
-    axes.barh(np.arange(feas2.shape[0]), feas2.importance.values, alpha=0.8,color='orange')
-    axes.set_title("feature importance")
-    axes.set_yticks(np.arange(feas2.shape[0]))
-    axes.set_yticklabels(feas2.features.values, rotation='horizontal')
-    plot.show()
-
-    fig, axes = plot.subplots(figsize=(11,17))
-    axes.barh(np.arange(feas3.shape[0]), feas3.importance.values, alpha=0.8,color='orange')
-    axes.set_title("feature importance")
-    axes.set_yticks(np.arange(feas3.shape[0]))
-    axes.set_yticklabels(feas3.features.values, rotation='horizontal')
-    plot.show()
-
-    fig, axes = plot.subplots(figsize=(11,17))
-    axes.barh(np.arange(feas4.shape[0]), feas4.importance.values, alpha=0.8,color='orange')
-    axes.set_title("feature importance")
-    axes.set_yticks(np.arange(feas4.shape[0]))
-    axes.set_yticklabels(feas4.features.values, rotation='horizontal')
-    plot.show()
-
-def dummyComparison(Xtrain, Xtest, ytrain, ytest, comparison_model):
-
-    #compared model
-    y_pred = comparison_model.predict(Xtest)
-    print(confusion_matrix(ytest, y_pred))
-    print(classification_report(ytest, y_pred))
-
-    #dummy classifier
-    dummy = DummyClassifier(strategy='most_frequent').fit(Xtrain, ytrain)
-    ydummy = dummy.predict(Xtest)
-    print(confusion_matrix(ytest, ydummy))
-    print(classification_report(ytest, ydummy))
-
-    fpr1, tpr1, _ = roc_curve(ytest,y_pred)
-    plot.plot(fpr1,tpr1)
-    fpr2, tpr2, _ = roc_curve(ytest,ydummy)
-    plot.title("ROC curve",fontsize=18,pad=20)
-    plot.plot(fpr2,tpr2,color='green',linestyle='--')
-    plot.xlabel('False positive rate')
-    plot.ylabel('True positive rate')
-    plot.legend(["logistic", "dummy"]) 
-    plot.show()
- 
-def logisticCrossVal(data):
+def gammaCrossVal(data):
 
     y = data.win.astype('int')
-    X = data.drop(["teamPosition", "win"], axis=1)
+    X = data[['damagePerMinute',
+            'bountyLevel', 
+            'goldPerMinute',
+            'champExperience',
+            'visionScorePerMinute',
+            'turretTakedowns',
+            'kda',
+            'hadOpenNexus',
+            'turretsLost',
+            'visionScore',
+            'teamDamagePercentage',
+            'totalDamageDealtToChampions',
+            'killParticipation',
+            'goldSpent',
+            'physicalDamageDealtToChampions',
+            'jungleCsBefore10Minutes',]]
 
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2,stratify=y)
 
     mean_error=[]
     std_error=[]
-    Ci_range = [0.01, 0.1, 1, 5, 10, 25, 50, 100]
+    gamma_range = [1, 2, 3, 4, 5]
+    for gamma in gamma_range:
+      model = SVC(C=1,kernel='rbf',gamma=gamma)
+      scores = cross_val_score(model,Xtrain, ytrain, cv=5, scoring='f1')
+      mean_error.append(np.array(scores).mean())
+      std_error.append(np.array(scores).std())
+    plot.rc('font', size=18); plot.rcParams['figure.constrained_layout.use'] = True
+    plot.errorbar(gamma_range,mean_error,yerr=std_error,linewidth=3)
+    plot.title("penalty parameter vs F1 score",fontsize=18,pad=20)
+    plot.xlabel('gamma'); plot.ylabel('F1 Score')
+    plot.show()
+
+
+def cCrossVal(data):
+
+    y = data.win.astype('int')
+    X = data[['damagePerMinute',
+            'bountyLevel', 
+            'goldPerMinute',
+            'champExperience',
+            'visionScorePerMinute',
+            'turretTakedowns',
+            'kda',
+            'hadOpenNexus',
+            'turretsLost',
+            'visionScore',
+            'teamDamagePercentage',
+            'totalDamageDealtToChampions',
+            'killParticipation',
+            'goldSpent',
+            'physicalDamageDealtToChampions',
+            'jungleCsBefore10Minutes',]]
+
+    Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2,stratify=y)
+
+    mean_error=[]
+    std_error=[]
+    Ci_range = [1,5,10,20,30]
     for Ci in Ci_range:
-      model = LogisticRegression(C=Ci,penalty='l2')
+      print(f"Starting model {Ci}")
+      model = SVC(C=Ci,kernel='rbf',gamma=1)
       scores = cross_val_score(model,Xtrain, ytrain, cv=5, scoring='f1')
       mean_error.append(np.array(scores).mean())
       std_error.append(np.array(scores).std())
@@ -189,6 +175,9 @@ def logisticCrossVal(data):
     plot.title("penalty parameter vs F1 score",fontsize=18,pad=20)
     plot.xlabel('Ci'); plot.ylabel('F1 Score')
     plot.show()
+
+
+    return 1
 
 df = pd.read_csv('league_dataset_60k.csv')
 column_keys = df.keys()
@@ -210,16 +199,16 @@ data_mid = grouped.get_group("MIDDLE")
 data_bot = grouped.get_group("BOTTOM")
 data_sup = grouped.get_group("UTILITY")
 
-trainVsTestPredict(df)
-#logisticCrossVal(df)
 
-model, Xtrain, Xtest, ytrain, ytest = logisticRegFullFeatures(df, 1)
-#model, Xtrain, Xtest, ytrain, ytest = logisticRegFullFeatures(data_sup, 1)
+print(f'top size: {data_top.shape}, jungle size: {data_jug.shape}, mid size: {data_mid.shape}, bot size: {data_bot.shape}, sup size: {data_sup.shape},')
 
-#other functions to use, uncomment where needed
+print(f'{(df["win"].value_counts()).astype(int)}')
 
-featureImport(model, Xtrain)
+model, Xtrain, Xtest, ytrain, ytest = svcKernelLimitedFeatures(data_sup, 5, 1, sup_keys)
 
-#dummyComparison(Xtrain, Xtest, ytrain, ytest, model)
+dummyComparison(Xtrain, Xtest, ytrain, ytest, model)
+#trainVsTestPredict(data_top)
 
+#gammaCrossVal(df.iloc[0:4000])
+#cCrossVal(df.iloc[0:4000])
 
