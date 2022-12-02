@@ -5,7 +5,7 @@ import pandas as pd
 from keys import API_KEY
 
 MAX_DEPTH = 2 #define how far we recursively acquire data
-ROOT_PUUID = "CTcDJgXhdtguxxfjjkqMNUa4fjYI8UDJo6sFgkpEeeXepF03gagf4doUz4rO3cJ-bkz3ht4f03BQKg" #id that the recusion starts from
+ROOT_PUUID = "kmDsoNSAJDQ38U07YYem3xaUmPeFht0EouZ1h46WhvRYd8lJ4cVntEaSlrixvSTBl0SPnQLaM6pcpw" #id that the recusion starts from
 
 #matchid = "EUW1_6158939054"
 
@@ -151,22 +151,31 @@ def extractPlayerData(player_data, playerIDdataAccumulator):
 
 
 
-with open('ML_League_Data_1.json', 'r') as f:
-  df1 = pd.read_json(f)
+id = getMatchIDs(ROOT_PUUID)
+match = getMatchData(id[0])
 
-with open('ML_League_Data_2.json', 'r') as f:
-  df2 = pd.read_json(f)
-#df.to_csv('test.csv', index=False)
+#store for testing
+with open("./test.json", "w") as fp:
+        json.dump(match, fp, indent=4)
 
-data = []
+# with open('ML_League_Data_1.json', 'r') as f:
+#   df1 = pd.read_json(f)
 
-for i in range(1,10):
-    with open(f'ML_League_Data_{(i)}.json', 'r') as f:
-        data.append(pd.read_json(f))
-        print(i)
+# with open('ML_League_Data_2.json', 'r') as f:
+#   df2 = pd.read_json(f)
+# #df.to_csv('test.csv', index=False)
 
-fulldata = pd.concat(data)
-fulldata.to_csv('league_dataset_60k.csv', index=False)
+# data = []
+
+# for i in range(1,10):
+#     with open(f'ML_League_Data_{(i)}.json', 'r') as f:
+#         data.append(pd.read_json(f))
+#         print(i)
+
+# fulldata = pd.concat(data)
+# fulldata.to_csv('league_dataset_60k.csv', index=False)
+
+
 
 
 #print(getPlayerID("Ekko the Neeko"))

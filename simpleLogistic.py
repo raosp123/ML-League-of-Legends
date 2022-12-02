@@ -11,6 +11,7 @@ from sklearn.metrics import classification_report
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import roc_curve
 from sklearn.preprocessing import StandardScaler
+from operator import itemgetter
 
 ##parent function that runs our model fully
 
@@ -22,14 +23,14 @@ def logisticRegFullFeatures(data, c):
 
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2,stratify=y)
 
-    model = LogisticRegression(penalty='none')
+    model = LogisticRegression(C=c,penalty='l2')
     # fit the model
     model.fit(X, y)
     
     return model, Xtrain, Xtest, ytrain, ytest
 
 def logisticRegLimitedFeatures(data, c):
-    y=data.win
+    y=data.win.astype('int')
     X = data[["goldSpent", "gameLength","timePlayed","bountyGold","goldEarned","champExperience",
               "summonerLevel","damageDealtToTurrets","damageDealtToBuildings","damageDealtToObjectives"]]
 
@@ -49,8 +50,14 @@ def featureImport(model, X):
     feas['importance'] = importance
     feas = feas.sort_values(by='importance')
 
+    features = []
+
     for i,v in enumerate(importance):
-        print('Feature: %s, Score: %.5f' % (feas['features'][i],v))
+        features.append((feas['features'][i],v))
+
+    features.sort(key=itemgetter(1))
+
+    print(features)
 
     feas1 = feas[0:95]
     feas2 = feas[95:191]
@@ -96,7 +103,7 @@ def dummyComparison(Xtrain, Xtest, ytrain, ytest, comparison_model):
  
 def logisticCrossVal(data):
 
-    y = data.win
+    y = data.win.astype('int')
     X = data.drop(["teamPosition", "win"], axis=1)
 
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2,stratify=y)
@@ -105,7 +112,7 @@ def logisticCrossVal(data):
     std_error=[]
     Ci_range = [0.01, 0.1, 1, 5, 10, 25, 50, 100]
     for Ci in Ci_range:
-      model = LogisticRegression(C=Ci,penalty='l2');
+      model = LogisticRegression(C=Ci,penalty='l2')
       scores = cross_val_score(model,Xtrain, ytrain, cv=5, scoring='f1')
       mean_error.append(np.array(scores).mean())
       std_error.append(np.array(scores).std())
@@ -119,19 +126,14 @@ df = pd.read_csv('league_dataset_60k.csv')
 column_keys = df.keys()
 scaler = StandardScaler()
 
-print(df.shape)
-
 #pop the string label and win output before normalisation
 teampos = df.pop("teamPosition")
 win = df.pop("win")
 
 df = scaler.fit_transform(df)
 
-
-print(df.shape)
 df = np.column_stack((teampos, df))
 df = pd.DataFrame(np.column_stack((df, win)), columns=column_keys)
-print(df)
 
 grouped = df.groupby(df.teamPosition)
 data_top = grouped.get_group("TOP")
@@ -141,11 +143,13 @@ data_bot = grouped.get_group("BOTTOM")
 data_sup = grouped.get_group("UTILITY")
 
 
-model, Xtrain, Xtest, ytrain, ytest = logisticRegFullFeatures(df, 1)
+model, Xtrain, Xtest, ytrain, ytest = logisticRegLimitedFeatures(data_top, 1)
+
+#print(f"size of train data X:{Xtrain.shape} Y:{ytrain.shape}, size of test data X:{Xtest.shape} Y:{ytest.shape}")
 # #call the other functions you want to use here
 
 featureImport(model, Xtrain)
-#logisticCrossVal(data_top)
+#logisticCrossVal(df)
 dummyComparison(Xtrain, Xtest, ytrain, ytest, model)
 
 
