@@ -1,0 +1,25 @@
+TOP:
+"goldSpent", "gameLength","timePlayed","longestTimeSpentLiving","bountyGold","goldEarned","champExperience",
+"summonerLevel","damageDealtToTurrets","damageDealtToBuildings","damageDealtToObjectives","totalHealsOnTeammates"
+,"totalDamageTaken","totalDamageShieldedOnTeammates","totalHeal","totalDamageDealtToChampions"
+
+JUG:
+"champExperience","damageDealtToBuildings","damageDealtToTurrets","totalHeal","goldEarned","damageDealtToObjectives",
+"physicalDamageDealtToChampions","magicDamageDealtToChampions",
+"goldSpent","bountyGold","totalDamageTaken","trueDamageTaken","gameLength","timePlayed","totalHealsOnTeammates",
+"effectiveHealAndShielding"
+
+MID:
+"goldSpent", "gameLength","timePlayed","longestTimeSpentLiving","bountyGold","goldEarned","champExperience",
+"summonerLevel","damageDealtToTurrets","damageDealtToBuildings","damageDealtToObjectives","effectiveHealAndShielding"
+,"totalDamageTaken","damageSelfMitigated","totalHeal","totalDamageDealtToChampions"
+
+BOT:
+"goldSpent", "gameLength","timePlayed","longestTimeSpentLiving","bountyGold","goldEarned","champExperience",
+"effectiveHealAndShielding","damageDealtToTurrets","damageDealtToBuildings","damageDealtToObjectives","largestCriticalStrike"
+,"totalDamageTaken","damageSelfMitigated","totalHeal","totalDamageDealtToChampions"
+
+SUP:
+"goldSpent", "gameLength","timePlayed","longestTimeSpentLiving","bountyGold","goldEarned","champExperience",
+"summonerLevel","damageDealtToTurrets","damageDealtToBuildings","damageDealtToObjectives","totalHealsOnTeammates"
+,"effectiveHealAndShielding","assists","totalHeal","goldPerMinute"
